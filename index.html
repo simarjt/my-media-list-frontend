@@ -1,19 +1,52 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Hello World!</title>
-  </head>
-  <body>
-    <h1>Hello World!</h1>
-    <!-- All of the Node.js APIs are available in this renderer process. -->
-    We are using Node.js <script>document.write(process.versions.node)</script>,
-    Chromium <script>document.write(process.versions.chrome)</script>,
-    and Electron <script>document.write(process.versions.electron)</script>.
+<head>
+  <title>MyMediaList</title>
+  <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-grid.css">
+  <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/dist/styles/ag-theme-balham.css">
+</head>
+<body>
 
-    <script>
-      // You can also require other files to run in this process
-      require('./renderer.js')
-    </script>
-  </body>
+  <button onclick="loadList('WATCHING')"     >WATCHING     </button>
+  <button onclick="loadList('COMPLETED')"    >COMPLETED    </button>
+  <button onclick="loadList('ON_HOLD')"      >ON HOLD      </button>
+  <button onclick="loadList('DROPPED')"      >DROPPED      </button>
+  <button onclick="loadList('PLAN_TO_WATCH')">PLAN TO WATCH</button>
+
+  <h1 id="list_title"></h1>
+  <div id="myGrid" style="height:500px;width:1000px;" class="ag-theme-balham"></div>
+
+  <script type="text/javascript">
+      // let the grid know which columns and what data to use
+      let gridOptions = {
+          columnDefs: [
+              {headerName: "title", field: "title", width: 320},
+              //https://www.ag-grid.com/javascript-grid-value-getters/
+              {headerName: "watched", field: "episodesWatched", width: 120},
+              {headerName: "total", field: "episodesTotal", width: 100},
+              {headerName: "type", field: "type", width: 100},
+              {headerName: "score", field: "score", width: 100},
+              {headerName: "notes", field: "notes", width: 250}
+          ],
+          enableSorting: true,
+          enableFilter: true
+      };
+      // lookup the container we want the Grid to use
+      let eGridDiv = document.querySelector('#myGrid');
+      // create the grid passing in the div to use together with the columns & data we want to use
+      new agGrid.Grid(eGridDiv, gridOptions);
+      //default call
+      loadList("WATCHING");
+
+      function loadList(list) {
+          fetch('http://localhost:9081/my-list?list='+list+'&size=1000').then(function(response) {
+              return response.json();
+          }).then(function(data) {
+              gridOptions.api.setRowData(data.content);
+          });
+          document.getElementById("list_title").innerHTML = list.replace(/_/g, " ");
+      }
+  </script>
+</body>
 </html>

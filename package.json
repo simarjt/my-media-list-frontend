@@ -1,22 +1,23 @@
 {
-  "name": "electron-quick-start",
-  "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "name": "my-media-list",
+  "version": "0.3.0",
+  "description": "MAL inspired program",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "https://github.com/simarjt/my-media-list-frontend",
   "keywords": [
     "Electron",
-    "quick",
-    "start",
-    "tutorial",
+    "MAL",
+    "media",
+    "list",
     "demo"
   ],
-  "author": "GitHub",
+  "author": "JT",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^3.0.7"
+    "electron": "^3.0.7",
+    "electron-packager": "^13.0.0"
   }
 }
