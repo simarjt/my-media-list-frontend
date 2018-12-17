@@ -13,24 +13,113 @@
   <button onclick="loadList('ON_HOLD')"      >ON HOLD      </button>
   <button onclick="loadList('DROPPED')"      >DROPPED      </button>
   <button onclick="loadList('PLAN_TO_WATCH')">PLAN TO WATCH</button>
+  <br><br>
+  <button onclick="createNewEntry()">new entry</button>
 
   <h1 id="list_title"></h1>
-  <div id="myGrid" style="height:500px;width:1000px;" class="ag-theme-balham"></div>
+  <div id="myGrid" style="height:500px;width:850px;float:left;" class="ag-theme-balham"></div>
+  <div id="editDiv" style="width:375px;border:1px solid #BDC3C7;float:left;margin-left:3px;padding:2px;" hidden>
+    <table>
+      <tbody>
+        <tr hidden>
+          <td>id</td>
+          <td>
+            <input id="idField">
+          </td>
+        </tr>
+        <tr>
+          <td>title</td>
+          <td>
+            <input id="titleField" style="width: 300px">
+          </td>
+        </tr>
+        <tr>
+          <td>progress</td>
+          <td>
+            <input id="watchedField" style="width: 50px"> / <input id="totalField" style="width: 50px">
+          </td>
+        </tr>
+        <tr>
+          <td>type</td>
+          <td>
+            <select id="typeField">
+              <option value="-">select</option>
+              <option value="GAME">GAME</option>
+              <option value="SERIES">SERIES</option>
+              <option value="MOVIE">MOVIE</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>list</td>
+          <td>
+            <select id="listField">
+              <option value="-">select</option>
+              <option value="WATCHING">WATCHING</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="ON_HOLD">ON HOLD</option>
+              <option value="DROPPED">DROPPED</option>
+              <option value="PLAN_TO_WATCH">PLAN TO WATCH</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>score</td>
+          <td>
+            <select id="scoreField">
+              <option value="-">select</option>
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>notes</td>
+          <td>
+            <input id="notesField" style="width: 300px">
+          </td>
+        </tr>
+      <!--<tr>-->
+        <!--<td>-->
+          <!--<button onclick="cancelEditEntryBox()">cancel</button>-->
+        <!--</td>-->
+        <!--<td>-->
+          <!--<button id="createButton" onclick="createEntry()">create</button>-->
+          <!--<button id="updateButton" onclick="updateEntry()">update</button>-->
+        <!--</td>-->
+      <!--</tr>-->
+      </tbody>
+    </table>
+    <button id="createButton" onclick="createEntry()">create</button>
+    <button id="updateButton" onclick="updateEntry()">update</button>
+    <button onclick="cancelEditEntryBox()">cancel</button>
+  </div>
 
   <script type="text/javascript">
       // let the grid know which columns and what data to use
       let gridOptions = {
           columnDefs: [
-              {headerName: "title", field: "title", width: 320},
-              //https://www.ag-grid.com/javascript-grid-value-getters/
-              {headerName: "watched", field: "episodesWatched", width: 120},
-              {headerName: "total", field: "episodesTotal", width: 100},
+              {headerName: "title", field: "title", width: 300, editable: true},
+              {headerName: "progress", field: "progress", width: 100, valueGetter: function determineProgress(params) {
+                      return params.data.episodesWatched + '/' + params.data.episodesTotal;
+              }},
               {headerName: "type", field: "type", width: 100},
               {headerName: "score", field: "score", width: 100},
-              {headerName: "notes", field: "notes", width: 250}
+              {headerName: "notes", field: "notes", width: 200}
           ],
-          enableSorting: true,
-          enableFilter: true
+          defaultColDef: { suppressMovable: true },
+          onCellEditingStarted: function(event) {},
+          onCellEditingStopped: function(event) {},
+          onRowClicked: function (event) { loadEditEntryBox(event.data); }
       };
       // lookup the container we want the Grid to use
       let eGridDiv = document.querySelector('#myGrid');
@@ -46,7 +135,110 @@
               gridOptions.api.setRowData(data.content);
           });
           document.getElementById("list_title").innerHTML = list.replace(/_/g, " ");
+          document.getElementById("editDiv").hidden = true;
       }
+
+      function createEntry() {
+          let list = document.getElementById("listField").value,
+              type = document.getElementById("typeField").value,
+              title = document.getElementById("titleField").value,
+              episodesWatched = document.getElementById("watchedField").value,
+              episodesTotal = document.getElementById("totalField").value,
+              score = document.getElementById("scoreField").value,
+              notes = document.getElementById("notesField").value;
+          let json = {
+              list: list,
+              type: type,
+              title: title,
+              episodesWatched: episodesWatched,
+              episodesTotal: episodesTotal,
+              score: score,
+              notes: notes
+          };
+          fetch('http://localhost:9081/my-list', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(json)
+          }).then(r => {
+              if (r.status === 200) {
+                  loadList(list)
+              } else {
+                  alert(r.status + "invalid arguments");
+              }
+          });
+      }
+
+      function updateEntry() {
+          let id = document.getElementById("idField").value,
+              list = document.getElementById("listField").value,
+              type = document.getElementById("typeField").value,
+              title = document.getElementById("titleField").value,
+              episodesWatched = document.getElementById("watchedField").value,
+              episodesTotal = document.getElementById("totalField").value,
+              score = document.getElementById("scoreField").value,
+              notes = document.getElementById("notesField").value;
+          let json = {
+              id: id,
+              list: list,
+              type: type,
+              title: title,
+              episodesWatched: episodesWatched,
+              episodesTotal: episodesTotal,
+              score: score,
+              notes: notes
+          };
+          fetch('http://localhost:9081/my-list/' + id, {
+              method: 'PUT',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(json)
+          }).then(r => {
+              if (r.status === 200) {
+                  loadList(list)
+              } else {
+                  alert("invalid arguments");
+              }
+          });
+      }
+
+      function cancelEditEntryBox() {
+          document.getElementById("editDiv").hidden = true;
+      }
+
+      function loadEditEntryBox(entry) {
+          document.getElementById("idField").value      = entry.id;
+          document.getElementById("titleField").value   = entry.title;
+          document.getElementById("watchedField").value = entry.episodesWatched;
+          document.getElementById("totalField").value   = entry.episodesTotal;
+          document.getElementById("typeField").value    = entry.type;
+          document.getElementById("listField").value    = entry.list;
+          document.getElementById("scoreField").value   = entry.score;
+          document.getElementById("notesField").value   = entry.notes;
+          document.getElementById("createButton").hidden = true;
+          document.getElementById("updateButton").hidden = false;
+          document.getElementById("editDiv").hidden = false;
+      }
+
+      function createNewEntry() {
+          document.getElementById("idField").value      = "";
+          document.getElementById("titleField").value   = "";
+          document.getElementById("watchedField").value = 0;
+          document.getElementById("totalField").value   = "";
+          document.getElementById("typeField").value    = "-";
+          document.getElementById("listField").value    = "-";
+          document.getElementById("scoreField").value   = "-";
+          document.getElementById("notesField").value   = "";
+          document.getElementById("createButton").hidden = false;
+          document.getElementById("updateButton").hidden = true;
+          document.getElementById("editDiv").hidden = false;
+      }
+
+
+
+
+
+
+    //TODO post entry
+
   </script>
 </body>
 </html>
